@@ -24,3 +24,6 @@ SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", 0.7))
 # Performance
 MAX_BATCH_SIZE = int(os.getenv("MAX_BATCH_SIZE", 100))
 MAX_RESUME_LENGTH = int(os.getenv("MAX_RESUME_LENGTH", 20000))
+
+# Intake
+UPLOAD_DIR = os.getenv("UPLOAD_DIR")
