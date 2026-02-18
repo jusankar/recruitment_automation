@@ -28,9 +28,9 @@ Thumbs.db
 *.log
 
 # Storages
-rag_service/app/uploads/
-rag_service/app/chroma_db/
+TalentMatchAI/uploads/
+TalentMatchAI/chroma_db/
 
 # Ignore Google OAuth credentials and token files
-rag_service/app/intake/token.json
-rag_service/app/intake/credentials.json
+TalentMatchAI/app/intake/token.json
+TalentMatchAI/app/intake/credentials.json
