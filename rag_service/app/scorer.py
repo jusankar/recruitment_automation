@@ -15,6 +15,7 @@ Candidates:
 {candidates}
 
 For each candidate:
+- name
 - Give score (0-100)
 - Strengths
 - Gaps
