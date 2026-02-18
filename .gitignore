@@ -28,8 +28,8 @@ Thumbs.db
 *.log
 
 # Storages
-rag_service/appuploads/
-rag_service/appchroma_db/
+rag_service/app/uploads/
+rag_service/app/chroma_db/
 
 # Ignore Google OAuth credentials and token files
 rag_service/app/intake/token.json
