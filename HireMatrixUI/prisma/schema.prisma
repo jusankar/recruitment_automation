@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id           String        @id @default(uuid())
+  name         String
+  users        User[]
+  jobs         Job[]
+  applications Application[]
+  interviews   Interview[]
+  plan         String        @default("free")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      Role
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Job {
+  id           String        @id @default(uuid())
+  title        String
+  description  String
+  requirements String        @db.Text
+  tenantId     String
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  applications Application[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Application {
+  id            String     @id @default(uuid())
+  candidateName String
+  candidateEmail String?
+  resumeUrl     String?
+  jdScore       Float?
+  strengths     Json?
+  gaps          Json?
+  status        String     @default("pending") // pending, reviewed, interviewed, rejected, hired
+  jobId         String?
+  job           Job?       @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  tenantId      String
+  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  interviewId   String?    @unique
+  interview     Interview?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Interview {
+  id                String       @id @default(uuid())
+  applicationId     String?      @unique
+  application       Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  candidateName     String
+  jdScore           Float?
+  strengths         Json?
+  gaps              Json?
+  transcript        String?      @db.Text
+  currentQuestion   String?      @db.Text
+  questionCount     Int          @default(0)
+  technicalScore    Float?
+  communicationScore Float?
+  confidenceScore   Float?
+  evaluationSummary String?      @db.Text
+  riskLevel         String?
+  status            String       @default("ongoing") // ongoing, completed
+  tenantId          String
+  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+enum Role {
+  admin
+  recruiter
+  candidate
+  director
+}

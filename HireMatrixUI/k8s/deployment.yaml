@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hirematrix
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hirematrix
+  template:
+    metadata:
+      labels:
+        app: hirematrix
+    spec:
+      containers:
+        - name: hirematrix
+          image: hirematrix:latest
+          ports:
+            - containerPort: 3000

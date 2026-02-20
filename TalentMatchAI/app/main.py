@@ -1,4 +1,5 @@
 from fastapi import FastAPI, BackgroundTasks, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from .models import BulkResumeInput, JobQuery, ResumeFetchResponse
 from .ingestion import ingest_bulk_resumes
 from .retriever import retrieve_candidates
@@ -10,6 +11,15 @@ from app.intake.gmail_fetcher import fetch_resume_emails
 app = FastAPI(
     title="Commercial Recruitment RAG Service",
     version="1.1"
+)
+
+# Allow HireMatrixUI (and other frontends) to call this API
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
   
 @app.post("/add-resumes")
