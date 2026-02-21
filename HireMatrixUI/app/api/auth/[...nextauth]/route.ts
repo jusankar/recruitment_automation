@@ -16,10 +16,20 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-          include: { tenant: true },
-        });
+        const loginId = credentials.email.trim();
+        const user = loginId.includes("@")
+          ? await prisma.user.findUnique({
+              where: { email: loginId },
+              include: { tenant: true },
+            })
+          : await prisma.user.findFirst({
+              where: {
+                email: {
+                  startsWith: `${loginId}@`,
+                },
+              },
+              include: { tenant: true },
+            });
 
         if (!user) {
           return null;

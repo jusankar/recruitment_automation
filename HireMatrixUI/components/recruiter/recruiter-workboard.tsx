@@ -21,6 +21,7 @@ import { BriefcaseBusiness, MapPin, Search, Star, Upload, UserRoundCheck } from 
 interface TalentMatchResult {
   row_key: string;
   name: string;
+  email?: string;
   score: number;
   strengths: string[];
   gaps: string[];
@@ -51,6 +52,7 @@ function normalizeResults(response: {
     return list.map((c: Record<string, unknown>, idx: number) => ({
       row_key: `result-${idx}`,
       name: String(c?.name ?? c?.candidate_name ?? "Unknown"),
+      email: c?.email ? String(c.email) : c?.candidate_email ? String(c.candidate_email) : undefined,
       score: parseScore(c?.score),
       strengths: Array.isArray(c?.strengths) ? (c.strengths as string[]) : [],
       gaps: Array.isArray(c?.gaps) ? (c.gaps as string[]) : [],
@@ -68,6 +70,7 @@ function normalizeResults(response: {
         return parsed.map((c: Record<string, unknown>, idx: number) => ({
           row_key: `result-string-${idx}`,
           name: String(c?.name ?? c?.candidate_name ?? "Unknown"),
+          email: c?.email ? String(c.email) : c?.candidate_email ? String(c.candidate_email) : undefined,
           score: parseScore(c?.score),
           strengths: Array.isArray(c?.strengths) ? (c.strengths as string[]) : [],
           gaps: Array.isArray(c?.gaps) ? (c.gaps as string[]) : [],
@@ -89,6 +92,7 @@ function normalizeResults(response: {
       return nested.map((c: Record<string, unknown>, idx: number) => ({
         row_key: `result-nested-${idx}`,
         name: String(c?.name ?? c?.candidate_name ?? "Unknown"),
+        email: c?.email ? String(c.email) : c?.candidate_email ? String(c.candidate_email) : undefined,
         score: parseScore(c?.score),
         strengths: Array.isArray(c?.strengths) ? (c.strengths as string[]) : [],
         gaps: Array.isArray(c?.gaps) ? (c.gaps as string[]) : [],
@@ -117,11 +121,13 @@ function normalizeResults(response: {
       const row = c as Record<string, unknown>;
       const meta = (row?.metadata as Record<string, unknown>) ?? {};
       const name = String(meta?.candidate_name ?? meta?.name ?? "Unknown");
+      const email =
+        meta?.candidate_email ? String(meta.candidate_email) : meta?.email ? String(meta.email) : undefined;
       const scoreVal = row?.score;
       const score = parseScore(scoreVal);
       const skills = meta?.skills;
       const strengths = Array.isArray(skills) ? (skills as string[]) : skills ? [String(skills)] : [];
-      return { row_key: `candidate-${idx}`, name, score, strengths, gaps: [] };
+      return { row_key: `candidate-${idx}`, name, email, score, strengths, gaps: [] };
     });
   }
 
@@ -183,6 +189,7 @@ export default function RecruiterWorkboard() {
         },
         body: JSON.stringify({
           name: result.name,
+          email: result.email ?? null,
           score: result.score,
           strengths: result.strengths ?? [],
           gaps: result.gaps ?? [],
@@ -197,7 +204,11 @@ export default function RecruiterWorkboard() {
       const iid = String(data?.interview_id ?? "");
       if (iid) {
         setForwardedCandidates((prev) => ({ ...prev, [result.row_key]: iid }));
-        setForwardSuccess(`Forwarded ${result.name}. Interview ID: ${iid}`);
+        const userText = data?.username ? ` Username: ${data.username}.` : "";
+        const pwdText = data?.password ? ` Password: ${data.password}.` : "";
+        const emailText = data?.candidate_email ? ` Email: ${data.candidate_email}.` : "";
+        const mailStatus = data?.email_sent ? " Credentials email sent." : " Credentials email not sent (check webhook config).";
+        setForwardSuccess(`Forwarded ${result.name}. Interview ID: ${iid}.${emailText}${userText}${pwdText}${mailStatus}`);
       } else {
         throw new Error("Interview service did not return interview ID.");
       }

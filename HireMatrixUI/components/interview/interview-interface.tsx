@@ -8,27 +8,36 @@ import { Label } from "@/components/ui/label";
 import VideoPanel from "./video-panel";
 import { useInterviewStore } from "@/store/interview-store";
 import { Badge } from "@/components/ui/badge";
-import { Clock3, Mic, Pause, Send, Square, Video } from "lucide-react";
+import { Ban, Clock3, Mic, Send, Square, Video } from "lucide-react";
 
 export default function InterviewInterface() {
   const {
     interviewId,
     question,
-    transcript,
     setInterview,
-    setTranscript,
+    reset,
   } = useInterviewStore();
 
   const [answer, setAnswer] = useState("");
+  const [capturedTranscript, setCapturedTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [evaluation, setEvaluation] = useState("");
-  const [risk, setRisk] = useState("");
   const [interviewComplete, setInterviewComplete] = useState(false);
+  const [interviewRejected, setInterviewRejected] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [questionNumber, setQuestionNumber] = useState(0);
   const [loading, setLoading] = useState(false);
   const [interviewIdInput, setInterviewIdInput] = useState("");
   const [timerSeconds, setTimerSeconds] = useState(20 * 60);
   const [sessionError, setSessionError] = useState("");
   const recognitionRef = useRef<any>(null);
+  const finalTranscriptRef = useRef("");
+
+  useEffect(() => {
+    // Always force candidate to start manually with interview_id after login
+    reset();
+    setSessionStarted(false);
+    setQuestionNumber(0);
+  }, [reset]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
@@ -41,34 +50,43 @@ export default function InterviewInterface() {
 
       recognitionRef.current.onresult = (event: any) => {
         let interimTranscript = "";
-        let finalTranscript = "";
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + " ";
+            finalTranscriptRef.current += `${transcript} `;
           } else {
             interimTranscript += transcript;
           }
         }
 
-        setAnswer((prev) => prev + finalTranscript);
-        setTranscript(finalTranscript);
+        setCapturedTranscript(`${finalTranscriptRef.current}${interimTranscript}`.trim());
       };
 
       recognitionRef.current.onerror = (event: any) => {
         console.error("Speech recognition error:", event.error);
       };
     }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
   }, []);
 
   useEffect(() => {
-    if (!interviewId || interviewComplete) return;
+    if (!sessionStarted || !interviewId || interviewComplete || interviewRejected) return;
 
     const timer = setInterval(() => {
       setTimerSeconds((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
+          if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            setIsRecording(false);
+          }
+          setSessionError("Time is up. The interview has been stopped.");
           setInterviewComplete(true);
           return 0;
         }
@@ -77,7 +95,7 @@ export default function InterviewInterface() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [interviewId, interviewComplete]);
+  }, [sessionStarted, interviewId, interviewComplete, interviewRejected]);
 
   const loadInterviewById = async () => {
     if (!interviewIdInput.trim()) return;
@@ -85,10 +103,10 @@ export default function InterviewInterface() {
     setLoading(true);
     setSessionError("");
     setInterviewComplete(false);
-    setEvaluation("");
-    setRisk("");
+    setInterviewRejected(false);
     setAnswer("");
-    setTranscript("");
+    setCapturedTranscript("");
+    finalTranscriptRef.current = "";
     setTimerSeconds(20 * 60);
 
     try {
@@ -102,9 +120,17 @@ export default function InterviewInterface() {
       }
 
       if (data?.interview_id) {
+        if (Boolean(data?.interview_complete)) {
+          setSessionStarted(false);
+          setSessionError("This interview is already completed for this ID.");
+          return;
+        }
+
         setInterview(data.interview_id, data.question || "");
+        setSessionStarted(true);
+        setQuestionNumber(1);
         setInterviewIdInput(data.interview_id);
-        setInterviewComplete(Boolean(data?.interview_complete));
+        setInterviewComplete(false);
       }
     } catch (error) {
       console.error("Failed to load interview:", error);
@@ -118,6 +144,7 @@ export default function InterviewInterface() {
     if (!interviewId || !answer.trim()) return;
 
     setLoading(true);
+    setSessionError("");
     try {
       const response = await fetch(`/api/interviews/${interviewId}/answer`, {
         method: "POST",
@@ -134,14 +161,15 @@ export default function InterviewInterface() {
         throw new Error(data?.error || "Failed to submit answer.");
       }
 
-      setEvaluation(data.evaluation || "");
-      setRisk(data.risk || "");
-
       if (data.interview_complete) {
         setInterviewComplete(true);
+        setIsRecording(false);
       } else if (data.next_question) {
         setInterview(data.interview_id || interviewId, data.next_question);
+        setQuestionNumber((prev) => prev + 1);
         setAnswer("");
+      } else {
+        setSessionError("No next question returned from interview service.");
       }
     } catch (error) {
       console.error("Failed to submit answer:", error);
@@ -151,33 +179,36 @@ export default function InterviewInterface() {
     }
   };
 
-  const toggleRecording = () => {
+  const startRecording = () => {
     if (!recognitionRef.current) {
       alert("Speech recognition not supported in your browser.");
       return;
     }
 
-    if (isRecording) {
+    finalTranscriptRef.current = "";
+    setCapturedTranscript("");
+    recognitionRef.current.start();
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current) {
       recognitionRef.current.stop();
-      setIsRecording(false);
-    } else {
-      recognitionRef.current.start();
-      setIsRecording(true);
+    }
+    setIsRecording(false);
+    if (capturedTranscript.trim()) {
+      setAnswer((prev) => `${prev}${prev ? " " : ""}${capturedTranscript.trim()}`.trim());
+      setCapturedTranscript("");
+      finalTranscriptRef.current = "";
     }
   };
 
-  const pauseInterview = () => {
-    if (isRecording && recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  const stopInterview = () => {
+  const rejectInterview = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
       setIsRecording(false);
     }
+    setInterviewRejected(true);
     setInterviewComplete(true);
   };
 
@@ -196,32 +227,29 @@ export default function InterviewInterface() {
         </CardHeader>
         <CardContent className="space-y-4">
           <VideoPanel />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
-              variant={isRecording ? "destructive" : "default"}
-              onClick={toggleRecording}
-              disabled={!interviewId || interviewComplete}
+              onClick={startRecording}
+              disabled={!sessionStarted || !interviewId || interviewComplete || interviewRejected || isRecording}
             >
               <Mic className="mr-2 h-4 w-4" />
-              {isRecording ? "Stop Recording" : "Start Recording"}
+              Start Recording
             </Button>
             <Button
               variant="outline"
-              onClick={pauseInterview}
-              disabled={!isRecording}
-            >
-              <Pause className="mr-2 h-4 w-4" />
-              Pause
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={stopInterview}
-              disabled={!interviewId}
+              onClick={stopRecording}
+              disabled={!sessionStarted || !interviewId || interviewComplete || !isRecording}
             >
               <Square className="mr-2 h-4 w-4" />
-              Stop/Close
+              Stop
             </Button>
           </div>
+          {capturedTranscript && (
+            <div className="space-y-2 border-t pt-4">
+              <Label>Captured Transcript</Label>
+              <div className="rounded-md border bg-muted/30 p-3 text-sm">{capturedTranscript}</div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -236,7 +264,7 @@ export default function InterviewInterface() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!interviewId ? (
+          {!sessionStarted || !interviewId ? (
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">
                 Enter your interview ID from recruiter to start interview.
@@ -264,7 +292,7 @@ export default function InterviewInterface() {
 
               {question && (
                 <div className="space-y-2">
-                  <Label>Current Question</Label>
+                  <Label>{`Question ${questionNumber > 0 ? questionNumber : 1}`}</Label>
                   <div className="rounded-md border p-4 bg-muted/50">
                     <p className="font-medium">{question}</p>
                   </div>
@@ -279,61 +307,39 @@ export default function InterviewInterface() {
                   placeholder="Type your answer or use voice recording..."
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
-                  disabled={interviewComplete}
+                  disabled={interviewComplete || interviewRejected}
                 />
               </div>
 
-              {transcript && (
-                <div className="space-y-2">
-                  <Label>Captured Transcript</Label>
-                  <div className="rounded-md border p-3 bg-muted/30 text-sm">
-                    {transcript}
-                  </div>
-                </div>
-              )}
-
-              {evaluation && (
-                <div className="space-y-2">
-                  <Label>Evaluation</Label>
-                  <div className="rounded-md border p-3 bg-muted/30 text-sm">
-                    {evaluation}
-                  </div>
-                </div>
-              )}
-
-              {risk && (
-                <div className="space-y-2">
-                  <Label>Risk Level</Label>
-                  <Badge
-                    variant={
-                      risk.toLowerCase().includes("low")
-                        ? "default"
-                        : risk.toLowerCase().includes("high")
-                        ? "destructive"
-                        : "secondary"
-                    }
-                  >
-                    {risk}
-                  </Badge>
-                </div>
-              )}
-
               {!interviewComplete ? (
-                <Button
-                  onClick={submitAnswer}
-                  disabled={loading || !answer.trim()}
-                  className="w-full"
-                >
-                  <Send className="mr-2 h-4 w-4" />
-                  {loading ? "Submitting..." : "Submit Answer"}
-                </Button>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Button
+                    onClick={submitAnswer}
+                    disabled={loading || !answer.trim()}
+                    className="w-full"
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    {loading ? "Submitting..." : "Submit Answer"}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={rejectInterview}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    <Ban className="mr-2 h-4 w-4" />
+                    Reject
+                  </Button>
+                </div>
               ) : (
-                <div className="rounded-md border p-4 bg-green-50 dark:bg-green-950">
-                  <p className="font-medium text-green-800 dark:text-green-200">
-                    Interview Completed
+                <div className={`rounded-md border p-4 ${interviewRejected ? "bg-red-50 dark:bg-red-950" : "bg-green-50 dark:bg-green-950"}`}>
+                  <p className={`font-medium ${interviewRejected ? "text-red-800 dark:text-red-200" : "text-green-800 dark:text-green-200"}`}>
+                    {interviewRejected ? "Interview Rejected" : "Interview Completed"}
                   </p>
-                  <p className="text-sm text-green-600 dark:text-green-300 mt-1">
-                    Thank you for participating in the interview.
+                  <p className={`mt-1 text-sm ${interviewRejected ? "text-red-600 dark:text-red-300" : "text-green-600 dark:text-green-300"}`}>
+                    {interviewRejected
+                      ? "Interview has been stopped before completion."
+                      : "Thank you for participating in the interview."}
                   </p>
                 </div>
               )}

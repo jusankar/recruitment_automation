@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import InterviewChart from "@/components/charts/interview-chart";
 import { BarChart3, CircleCheckBig, DollarSign, ListChecks } from "lucide-react";
 
 interface InterviewResult {
@@ -54,21 +53,22 @@ export default function InterviewDashboard() {
     }
   };
 
-  const chartData = interviews
-    .filter((i) => i.technical_score !== null)
-    .map((i) => ({
-      name: i.candidate_name,
-      score: i.technical_score || 0,
-      communication: i.communication_score || 0,
-      confidence: i.confidence_score || 0,
-    }));
-
   const totalCost = interviews.reduce((sum, interview) => sum + (interview.interview_cost || 0), 0);
+  const completedCount = interviews.filter((i) => i.status === "completed").length;
+  const avgTechnical =
+    interviews.filter((i) => i.technical_score !== null).length > 0
+      ? Math.round(
+          interviews
+            .filter((i) => i.technical_score !== null)
+            .reduce((acc, i) => acc + (i.technical_score || 0), 0) /
+            interviews.filter((i) => i.technical_score !== null).length
+        )
+      : 0;
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-white shadow-sm dark:border-blue-900/60 dark:from-blue-950/30 dark:to-slate-950">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium inline-flex items-center gap-1.5">
               <ListChecks className="h-4 w-4" />
@@ -79,7 +79,7 @@ export default function InterviewDashboard() {
             <div className="text-2xl font-bold">{interviews.length}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-white shadow-sm dark:border-emerald-900/60 dark:from-emerald-950/30 dark:to-slate-950">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium inline-flex items-center gap-1.5">
               <CircleCheckBig className="h-4 w-4" />
@@ -87,12 +87,10 @@ export default function InterviewDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {interviews.filter((i) => i.status === "completed").length}
-            </div>
+            <div className="text-2xl font-bold">{completedCount}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-white shadow-sm dark:border-amber-900/60 dark:from-amber-950/30 dark:to-slate-950">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium inline-flex items-center gap-1.5">
               <BarChart3 className="h-4 w-4" />
@@ -100,19 +98,10 @@ export default function InterviewDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {interviews.length > 0
-                ? Math.round(
-                    interviews
-                      .filter((i) => i.technical_score !== null)
-                      .reduce((acc, i) => acc + (i.technical_score || 0), 0) /
-                      interviews.filter((i) => i.technical_score !== null).length
-                  )
-                : 0}
-            </div>
+            <div className="text-2xl font-bold">{avgTechnical}%</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-fuchsia-200 bg-gradient-to-br from-fuchsia-50 to-white shadow-sm dark:border-fuchsia-900/60 dark:from-fuchsia-950/30 dark:to-slate-950">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium inline-flex items-center gap-1.5">
               <DollarSign className="h-4 w-4" />
@@ -124,17 +113,6 @@ export default function InterviewDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {chartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Interview Scores Chart</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <InterviewChart data={chartData} />
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>

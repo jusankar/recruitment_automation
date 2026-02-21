@@ -2,6 +2,22 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 
+function cleanEvaluationSummary(summary: string | null): string | null {
+  if (!summary) return summary;
+  return summary
+    .split("\n")
+    .filter((line) => {
+      const text = line.trim().toLowerCase();
+      return (
+        !text.startsWith("technical score:") &&
+        !text.startsWith("communication score:") &&
+        !text.startsWith("confidence score:")
+      );
+    })
+    .join("\n")
+    .trim();
+}
+
 export async function GET() {
   try {
     const user = await getCurrentUser();
@@ -44,7 +60,7 @@ export async function GET() {
         confidence_score: interview.confidenceScore,
         risk_level: interview.riskLevel,
         status: interview.status,
-        evaluation_summary: interview.evaluationSummary,
+        evaluation_summary: cleanEvaluationSummary(interview.evaluationSummary),
         question_count: questionCount,
         interview_cost: estimatedCost,
         created_at: interview.createdAt,

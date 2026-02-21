@@ -8,6 +8,15 @@ interface Params {
   params: { interviewId: string };
 }
 
+function parseScoreFromEvaluation(evaluation: string, label: string): number | null {
+  const regex = new RegExp(`${label}\\s*:\\s*(\\d{1,3})`, "i");
+  const match = evaluation.match(regex);
+  if (!match) return null;
+  const value = Number(match[1]);
+  if (Number.isNaN(value)) return null;
+  return Math.max(0, Math.min(100, value));
+}
+
 export async function POST(request: NextRequest, { params }: Params) {
   try {
     const user = await getCurrentUser();
@@ -23,11 +32,25 @@ export async function POST(request: NextRequest, { params }: Params) {
         id: interviewId,
         tenantId: user.tenantId,
       },
-      select: { id: true, questionCount: true },
+      select: {
+        id: true,
+        status: true,
+        questionCount: true,
+        technicalScore: true,
+        communicationScore: true,
+        confidenceScore: true,
+      },
     });
 
     if (!interview) {
       return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+    }
+
+    if (interview.status === "completed") {
+      return NextResponse.json(
+        { error: "This interview is already completed for this ID." },
+        { status: 400 }
+      );
     }
 
     const response = await fetch(`${interviewAPIBaseURL}/interview/${interviewId}/answer`, {
@@ -45,12 +68,22 @@ export async function POST(request: NextRequest, { params }: Params) {
     }
 
     const isComplete = Boolean(data?.interview_complete);
+    const evaluationText = String(data?.evaluation ?? "");
+    const technicalScore =
+      parseScoreFromEvaluation(evaluationText, "Technical Score") ?? interview.technicalScore;
+    const communicationScore =
+      parseScoreFromEvaluation(evaluationText, "Communication Score") ?? interview.communicationScore;
+    const confidenceScore =
+      parseScoreFromEvaluation(evaluationText, "Confidence Score") ?? interview.confidenceScore;
 
     await prisma.interview.update({
       where: { id: interviewId },
       data: {
         currentQuestion: isComplete ? null : String(data?.next_question ?? ""),
-        evaluationSummary: String(data?.evaluation ?? ""),
+        evaluationSummary: evaluationText,
+        technicalScore,
+        communicationScore,
+        confidenceScore,
         riskLevel: String(data?.risk ?? ""),
         status: isComplete ? "completed" : "ongoing",
         questionCount: (interview.questionCount ?? 0) + 1,
