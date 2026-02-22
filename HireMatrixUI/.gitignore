@@ -44,3 +44,4 @@ prisma/migrations/
 !.yarn/sdks
 !.yarn/versions
 yarn-error.log
+yarn.lock

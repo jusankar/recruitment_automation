@@ -1,133 +1,108 @@
-# HireMatrix Enterprise - Recruitment Automation SaaS
+# HireMatrixUI
 
-Production-grade SaaS UI for recruitment automation, integrating TalentMatchAI and InterviewAIx services.
+Web application for recruiter, candidate, director, and admin workflows in Recruitment Automation.
 
-## Features
+## About
+HireMatrixUI is a Next.js App Router application that integrates:
+- `TalentMatchAI` for resume search
+- `InterviewAIx` for interview lifecycle
+- PostgreSQL (Prisma) for users, interviews, and applications
 
-### User Roles
+Role-based modules:
+- Admin: user/database management
+- Recruiter: upload resumes, search candidates, forward to interview
+- Candidate: login, enter `interview_id`, answer questions
+- Director: interview outcomes and metrics dashboard
 
-- **Admin**: User management, database management
-- **Recruiter**: Resume upload, TalentMatchAI dashboard, candidate processing
-- **Candidate**: Interview interface with audio/video, transcript capture, real-time Q&A
-- **Director**: InterviewAIx dashboard with analytics and results
+## Architecture
+1. Recruiter uploads resumes to TalentMatchAI
+2. Recruiter searches candidates through TalentMatchAI
+3. Recruiter forwards candidate to interview
+   - InterviewAIx session started
+   - Local DB rows updated (`Interview`, `Application`, `User`)
+   - Candidate credentials generated
+4. Candidate logs in and attends interview by `interview_id`
+5. Director monitors interview results from UI API + DB
 
 ## Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **UI**: shadcn/ui + Tailwind CSS
-- **Authentication**: NextAuth.js (JWT)
-- **Database**: PostgreSQL + Prisma ORM
-- **State Management**: Zustand
-- **Data Fetching**: React Query (TanStack Query)
-- **Charts**: Recharts
-- **Video/Audio**: WebRTC + Web Speech API
-
-## Prerequisites
-
-- Node.js 18+ 
-- PostgreSQL database
-- Environment variables configured (see `.env.local.example`)
-
-## Setup
-
-1. **Install dependencies**:
-   ```bash
-   yarn install
-   ```
-
-2. **Set up environment variables**:
-   Create `.env.local` with:
-   ```env
-   NEXTAUTH_SECRET=your-secret-key
-   NEXTAUTH_URL=http://localhost:3000
-   NEXT_PUBLIC_TALENT_API=http://localhost:8000
-   NEXT_PUBLIC_INTERVIEW_API=http://localhost:8001
-   DATABASE_URL=postgresql://user:password@localhost:5432/interviewdb
-   ```
-
-3. **Set up database**:
-   ```bash
-   yarn db:generate
-   yarn db:push
-   # Or use migrations:
-   yarn db:migrate
-   ```
-
-4. **Run development server**:
-   ```bash
-   yarn dev
-   ```
-
-5. **Open browser**:
-   Navigate to `http://localhost:3000`
+- Next.js 14 (App Router), React 18, TypeScript
+- Tailwind CSS + shadcn/ui
+- NextAuth credentials auth (JWT session strategy)
+- Prisma + PostgreSQL
+- Axios + Fetch
+- Zustand
 
 ## Project Structure
-
-```
+```text
 HireMatrixUI/
-├── app/                    # Next.js App Router
-│   ├── admin/             # Admin pages
-│   ├── candidate/         # Candidate pages
-│   ├── director/          # Director pages
-│   ├── recruiter/         # Recruiter pages
-│   ├── api/               # API routes
-│   └── login/             # Authentication
-├── components/            # React components
-│   ├── ui/               # shadcn/ui components
-│   ├── admin/            # Admin components
-│   ├── recruiter/        # Recruiter components
-│   ├── candidate/       # Candidate components
-│   └── director/         # Director components
-├── lib/                  # Utilities and configs
-├── prisma/               # Database schema
-├── store/                # Zustand stores
-└── styles/               # Global styles
+  app/
+    api/
+    admin/
+    recruiter/
+    candidate/
+    director/
+    login/
+  components/
+  prisma/schema.prisma
+  lib/
+  store/
+  styles/
+  package.json
 ```
 
-## API Integration
+## Environment Variables
+Create `HireMatrixUI/.env`:
 
-### TalentMatchAI Service
-- **Base URL**: `NEXT_PUBLIC_TALENT_API`
-- **Endpoints**:
-  - `POST /upload` - Upload resume
-  - `POST /search` - Search resumes by job description
+```env
+NEXTAUTH_SECRET=replace_with_secure_secret
+NEXTAUTH_URL=http://localhost:3000
 
-### InterviewAIx Service
-- **Base URL**: `NEXT_PUBLIC_INTERVIEW_API`
-- **Endpoints**:
-  - `POST /interview/start` - Start interview
-  - `POST /interview/{id}/answer` - Submit answer
+NEXT_PUBLIC_TALENT_API=http://127.0.0.1:8000
+NEXT_PUBLIC_INTERVIEW_API=http://127.0.0.1:8001
 
-## Database Models
+DATABASE_URL=postgresql://postgres:password@localhost:5432/interviewdb
 
-- **User**: Authentication and user management
-- **Tenant**: Multi-tenancy support
-- **Job**: Job postings
-- **Application**: Candidate applications
-- **Interview**: Interview sessions and results
+# Optional
+NEXT_PUBLIC_APP_VERSION=v1.0.0
 
-## Development
+# Optional webhook for candidate credentials email
+CREDENTIAL_EMAIL_WEBHOOK_URL=
+```
 
-- **Type checking**: `yarn type-check` (if added)
-- **Linting**: `yarn lint`
-- **Database Studio**: `yarn db:studio`
+## Setup and Installation
+1. Install dependencies
+```bash
+cd HireMatrixUI
+npm install
+```
 
-## Deployment
+2. Configure `.env`
 
-The project includes:
-- Kubernetes deployment config (`k8s/deployment.yaml`)
-- GitHub Actions workflow (`.github/workflows/deploy.yml`)
+3. Prepare database schema
+```bash
+npx prisma generate
+npx prisma db push
+```
 
-Ensure environment variables are set in your deployment environment.
+4. Run development server
+```bash
+npm run dev
+```
+
+5. Open application
+- `http://localhost:3000`
+
+## Scripts
+- `npm run dev`
+- `npm run build`
+- `npm run start`
+- `npm run lint`
+- `npm run db:generate`
+- `npm run db:push`
+- `npm run db:migrate`
+- `npm run db:studio`
 
 ## Notes
-
-- Speech recognition uses Web Speech API (Chrome/Edge recommended)
-- Video capture requires HTTPS in production
-- Database migrations should be run before deployment
-- Ensure TalentMatchAI and InterviewAIx services are running
-
-## License
-
-Proprietary - HireMatrix Enterprise
+- Candidate credentials are generated during recruiter "Forward to interview" action.
+- If `CREDENTIAL_EMAIL_WEBHOOK_URL` is not configured, credentials are still generated and saved, but email sending is skipped.
+- Speech recognition depends on browser Web Speech API support.

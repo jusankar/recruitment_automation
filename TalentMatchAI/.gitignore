@@ -1,0 +1,37 @@
+# Python
+*__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+.venv/
+env/
+venv/
+*.sqlite3
+*.log
+
+# Bun / Node
+node_modules/
+dist/
+*.lock
+*.tsbuildinfo
+*.cache/
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Storages
+uploads/
+chroma_db/
+
+
+# Ignore Google OAuth credentials and token files
+app/intake/token.json
+app/intake/credentials.json

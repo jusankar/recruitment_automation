@@ -26,11 +26,3 @@ Thumbs.db
 
 # Logs
 *.log
-
-# Storages
-TalentMatchAI/uploads/
-TalentMatchAI/chroma_db/
-
-# Ignore Google OAuth credentials and token files
-TalentMatchAI/app/intake/token.json
-TalentMatchAI/app/intake/credentials.json
