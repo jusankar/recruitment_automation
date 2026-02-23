@@ -40,7 +40,7 @@ The platform automates the hiring pipeline:
 - Backend services: Python, FastAPI, OpenAI, SQLAlchemy, ChromaDB
 - Frontend: Next.js 14, TypeScript, Tailwind, NextAuth, Prisma
 - Database: PostgreSQL
-- Optional integrations: Gmail intake, credential email webhook
+- Optional integrations: Gmail intake, provider-based credential email service
 
 ## Repository Structure
 ```text
@@ -129,7 +129,19 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/interviewdb
 
 # Optional
 NEXT_PUBLIC_APP_VERSION=v1.0.0
-CREDENTIAL_EMAIL_WEBHOOK_URL=
+
+# Email configuration (Nodemailer)
+EMAIL_PROVIDER=gmail
+EMAIL_FROM=your-email@gmail.com
+GMAIL_USER=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-gmail-app-password
+
+# SMTP provider (if EMAIL_PROVIDER=smtp)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
 ```
 
 Initialize Prisma schema:
@@ -165,7 +177,7 @@ Open:
 
 ## Additional Notes
 - CORS for services is already set for local UI origins.
-- Candidate credential email depends on `CREDENTIAL_EMAIL_WEBHOOK_URL`.
+- Candidate credential email uses Nodemailer and can switch provider via `EMAIL_PROVIDER`.
 - For project-specific details, see:
   - `TalentMatchAI/README.md`
   - `InterviewAIx/README.md`

@@ -63,6 +63,7 @@ async def upload_resume(
     metadata = {
         "file_path": file_path,
         "candidate_name": structured_data.get("name"),
+        "candidate_email": structured_data.get("email"),
         "skills": structured_data.get("skills"),
         "experience": structured_data.get("experience", 0),
         "location": structured_data.get("location", ""),
@@ -97,6 +98,7 @@ def fetch_gmail(background_tasks: BackgroundTasks):
         metadatas.append({
             "file_path": path,
             "candidate_name": structured_data.get("name"),
+            "candidate_email": structured_data.get("email"),
             "skills": structured_data.get("skills"),
             "experience": structured_data.get("experience", 0),
             "location": structured_data.get("location", ""),

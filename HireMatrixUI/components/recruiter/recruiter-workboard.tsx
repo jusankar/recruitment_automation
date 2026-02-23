@@ -207,7 +207,7 @@ export default function RecruiterWorkboard() {
         const userText = data?.username ? ` Username: ${data.username}.` : "";
         const pwdText = data?.password ? ` Password: ${data.password}.` : "";
         const emailText = data?.candidate_email ? ` Email: ${data.candidate_email}.` : "";
-        const mailStatus = data?.email_sent ? " Credentials email sent." : " Credentials email not sent (check webhook config).";
+        const mailStatus = data?.email_sent ? " Credentials email sent." : " Credentials email not sent (check email provider configuration).";
         setForwardSuccess(`Forwarded ${result.name}. Interview ID: ${iid}.${emailText}${userText}${pwdText}${mailStatus}`);
       } else {
         throw new Error("Interview service did not return interview ID.");

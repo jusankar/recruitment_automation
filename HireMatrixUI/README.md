@@ -65,8 +65,20 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/interviewdb
 # Optional
 NEXT_PUBLIC_APP_VERSION=v1.0.0
 
-# Optional webhook for candidate credentials email
-CREDENTIAL_EMAIL_WEBHOOK_URL=
+# Email configuration (switchable provider)
+EMAIL_PROVIDER=gmail
+EMAIL_FROM=your-email@gmail.com
+
+# Gmail provider
+GMAIL_USER=your-email@gmail.com
+GMAIL_APP_PASSWORD=your-gmail-app-password
+
+# SMTP provider (used when EMAIL_PROVIDER=smtp)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
 ```
 
 ## Setup and Installation
@@ -104,5 +116,5 @@ npm run dev
 
 ## Notes
 - Candidate credentials are generated during recruiter "Forward to interview" action.
-- If `CREDENTIAL_EMAIL_WEBHOOK_URL` is not configured, credentials are still generated and saved, but email sending is skipped.
+- Email sending uses Nodemailer and is provider-configurable with `EMAIL_PROVIDER`.
 - Speech recognition depends on browser Web Speech API support.

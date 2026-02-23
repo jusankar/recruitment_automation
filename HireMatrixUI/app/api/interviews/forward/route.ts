@@ -2,17 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { sendEmail } from "@/lib/email-service";
 
 const interviewAPIBaseURL = process.env.NEXT_PUBLIC_INTERVIEW_API || "http://localhost:8001";
-const credentialEmailWebhook = process.env.CREDENTIAL_EMAIL_WEBHOOK_URL;
-
-function slugifyName(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, ".")
-    .replace(/^\.|\.$/g, "") || "candidate";
-}
 
 function generatePassword(length = 12): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
@@ -30,12 +22,7 @@ async function sendCredentialsEmail(params: {
   password: string;
   interviewId: string;
 }): Promise<boolean> {
-  if (!credentialEmailWebhook) {
-    console.warn("CREDENTIAL_EMAIL_WEBHOOK_URL is not configured. Skipping credential email send.");
-    return false;
-  }
-
-  const payload = {
+  return sendEmail({
     to: params.to,
     subject: "HireMatrix Interview Login Credentials",
     text: `Hello ${params.candidateName},
@@ -48,17 +35,13 @@ Interview ID: ${params.interviewId}
 
 Use these details to login and attend your interview.
 `,
-  };
-
-  const response = await fetch(credentialEmailWebhook, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+    html: `<p>Hello ${params.candidateName},</p>
+<p>Your interview credentials are ready.</p>
+<p><strong>Username:</strong> ${params.username}<br/>
+<strong>Password:</strong> ${params.password}<br/>
+<strong>Interview ID:</strong> ${params.interviewId}</p>
+<p>Use these details to login and attend your interview.</p>`,
   });
-
-  return response.ok;
 }
 
 export async function POST(request: NextRequest) {
@@ -92,10 +75,14 @@ export async function POST(request: NextRequest) {
     }
 
     const candidateName = String(payload.name ?? "Unknown");
-    const emailFromPayload = payload?.email ? String(payload.email).trim() : "";
-    const generatedEmail = `${slugifyName(candidateName)}.${String(data.interview_id).slice(0, 6)}@candidate.hirematrix.local`;
-    const candidateEmail = emailFromPayload || generatedEmail;
-    const username = candidateEmail.split("@")[0];
+    const candidateEmail = payload?.email ? String(payload.email).trim() : "";
+    if (!candidateEmail || !candidateEmail.includes("@")) {
+      return NextResponse.json(
+        { error: "Candidate email is required from parsed resume before forwarding to interview." },
+        { status: 400 }
+      );
+    }
+    const username = candidateEmail;
     const plainPassword = generatePassword(12);
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 

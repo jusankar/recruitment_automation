@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
 
 BASE_DIR = os.path.dirname(__file__)
 CREDENTIALS_FILE = os.path.join(BASE_DIR, "credentials.json")
@@ -18,6 +18,25 @@ TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
 
 MAX_RESULTS = int(os.getenv("GMAIL_MAX_RESULTS", 20))
 RESUME_LABEL = os.getenv("GMAIL_RESUME_LABEL", "Resume Inbox")
+PROCESSED_LABEL = os.getenv("GMAIL_PROCESSED_LABEL", "Resume Received")
+
+
+def get_or_create_label_id(service, label_name: str) -> str:
+    labels_result = service.users().labels().list(userId="me").execute()
+    labels = labels_result.get("labels", [])
+    for label in labels:
+        if label.get("name") == label_name:
+            return label["id"]
+
+    created = service.users().labels().create(
+        userId="me",
+        body={
+            "name": label_name,
+            "labelListVisibility": "labelShow",
+            "messageListVisibility": "show",
+        },
+    ).execute()
+    return created["id"]
 
 
 def get_gmail_service():
@@ -63,6 +82,8 @@ def fetch_resume_emails():
         print(results)
         messages = results.get("messages", [])
         stored_files = []
+        resume_label_id = get_or_create_label_id(service, RESUME_LABEL)
+        processed_label_id = get_or_create_label_id(service, PROCESSED_LABEL)
 
         for msg in messages:
             msg_data = service.users().messages().get(
@@ -73,6 +94,7 @@ def fetch_resume_emails():
 
             raw_msg = base64.urlsafe_b64decode(msg_data["raw"])
             email_message = message_from_bytes(raw_msg)
+            processed = False
 
             for part in email_message.walk():
                 if (
@@ -85,6 +107,17 @@ def fetch_resume_emails():
                         file_bytes = part.get_payload(decode=True)
                         saved_path = save_file(file_bytes, filename)
                         stored_files.append(saved_path)
+                        processed = True
+
+            if processed:
+                service.users().messages().modify(
+                    userId="me",
+                    id=msg["id"],
+                    body={
+                        "addLabelIds": [processed_label_id],
+                        "removeLabelIds": [resume_label_id, "UNREAD"],
+                    },
+                ).execute()
 
         return stored_files
 
