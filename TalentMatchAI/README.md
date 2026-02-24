@@ -1,4 +1,4 @@
-# TalentMatchAI
+﻿# TalentMatchAI
 
 Resume ingestion and semantic candidate matching service for Recruitment Automation.
 
@@ -75,7 +75,7 @@ For Gmail ingestion, place OAuth files at:
 - `TalentMatchAI/app/intake/credentials.json`
 - `TalentMatchAI/app/intake/token.json` (generated after first auth)
 
-## Setup and Installation
+## Setup
 1. Create virtual environment
 ```bash
 cd TalentMatchAI
@@ -88,7 +88,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-3. Configure `.env` (see above)
+3. Configure `.env`
 
 4. Run service
 ```bash
@@ -98,6 +98,18 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 5. Open docs
 - `http://127.0.0.1:8000/docs`
 
+## Docker
+For full stack container setup, use the root guide:
+- `../README.md` -> `Docker Quick Start`
+
+Run only this service (with dependencies via compose):
+```bash
+docker compose up --build talentmatchai
+```
+
 ## Notes
 - CORS is configured for `http://localhost:3000` and `http://127.0.0.1:3000`.
 - `/search` currently returns `scored_results`; downstream UI supports nested JSON formatting.
+
+
+

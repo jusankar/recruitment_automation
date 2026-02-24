@@ -1,9 +1,9 @@
-# HireMatrixUI
+﻿# HireMatrixUI
 
-Web application for recruiter, candidate, director, and admin workflows in Recruitment Automation.
+Web app for recruiter, candidate, director, and admin workflows in Recruitment Automation.
 
 ## About
-HireMatrixUI is a Next.js App Router application that integrates:
+HireMatrixUI is a Next.js App Router application integrating:
 - `TalentMatchAI` for resume search
 - `InterviewAIx` for interview lifecycle
 - PostgreSQL (Prisma) for users, interviews, and applications
@@ -12,7 +12,7 @@ Role-based modules:
 - Admin: user/database management
 - Recruiter: upload resumes, search candidates, forward to interview
 - Candidate: login, enter `interview_id`, answer questions
-- Director: interview outcomes and metrics dashboard
+- Director: outcomes and metrics dashboard
 
 ## Architecture
 1. Recruiter uploads resumes to TalentMatchAI
@@ -81,7 +81,7 @@ SMTP_USER=your-smtp-user
 SMTP_PASS=your-smtp-password
 ```
 
-## Setup and Installation
+## Setup
 1. Install dependencies
 ```bash
 cd HireMatrixUI
@@ -101,8 +101,17 @@ npx prisma db push
 npm run dev
 ```
 
-5. Open application
+5. Open app
 - `http://localhost:3000`
+
+## Docker
+For full stack container setup, use the root guide:
+- `../README.md` -> `Docker Quick Start`
+
+Run only this service (with dependencies via compose):
+```bash
+docker compose up --build hirematrixui
+```
 
 ## Scripts
 - `npm run dev`
@@ -118,3 +127,6 @@ npm run dev
 - Candidate credentials are generated during recruiter "Forward to interview" action.
 - Email sending uses Nodemailer and is provider-configurable with `EMAIL_PROVIDER`.
 - Speech recognition depends on browser Web Speech API support.
+
+
+

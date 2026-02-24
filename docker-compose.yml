@@ -1,0 +1,128 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: recruitment_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-interviewdb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-interviewdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  talentmatchai:
+    build:
+      context: ./TalentMatchAI
+      dockerfile: Dockerfile
+    container_name: talentmatchai
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      APP_NAME: ${TALENT_APP_NAME:-TalentMatchAI}
+      ENVIRONMENT: ${TALENT_ENVIRONMENT:-development}
+      LOG_LEVEL: ${TALENT_LOG_LEVEL:-INFO}
+      CHROMA_PERSIST_DIR: ${CHROMA_PERSIST_DIR:-/app/chroma_db}
+      COLLECTION_NAME: ${COLLECTION_NAME:-resumes}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+      OPENAI_TIMEOUT: ${OPENAI_TIMEOUT:-60}
+      TOP_K: ${TOP_K:-20}
+      SIMILARITY_THRESHOLD: ${SIMILARITY_THRESHOLD:-0.7}
+      MAX_BATCH_SIZE: ${MAX_BATCH_SIZE:-100}
+      MAX_RESUME_LENGTH: ${MAX_RESUME_LENGTH:-20000}
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads}
+      GMAIL_MAX_RESULTS: ${GMAIL_MAX_RESULTS:-20}
+      GMAIL_RESUME_LABEL: ${GMAIL_RESUME_LABEL:-Resume Inbox}
+      GMAIL_PROCESSED_LABEL: ${GMAIL_PROCESSED_LABEL:-Resume Received}
+    ports:
+      - "8000:8000"
+    volumes:
+      - talent_chroma_data:/app/chroma_db
+      - talent_uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/', timeout=5)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  interviewaix:
+    build:
+      context: ./InterviewAIx
+      dockerfile: Dockerfile
+    container_name: interviewaix
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-interviewdb}
+    ports:
+      - "8001:8001"
+    command:
+      [
+        "sh",
+        "-c",
+        "python -c \"from app.core.database import Base, engine; from app.models.interview import Interview; Base.metadata.create_all(bind=engine)\" && uvicorn app.main:app --host 0.0.0.0 --port 8001",
+      ]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/', timeout=5)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  hirematrixui:
+    build:
+      context: ./HireMatrixUI
+      dockerfile: Dockerfile
+      args:
+        NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace_with_secure_secret}
+        NEXT_PUBLIC_TALENT_API: ${NEXT_PUBLIC_TALENT_API:-http://localhost:8000}
+        NEXT_PUBLIC_INTERVIEW_API: ${NEXT_PUBLIC_INTERVIEW_API:-http://interviewaix:8001}
+        NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+    container_name: hirematrixui
+    environment:
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace_with_secure_secret}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXT_PUBLIC_TALENT_API: ${NEXT_PUBLIC_TALENT_API:-http://localhost:8000}
+      NEXT_PUBLIC_INTERVIEW_API: ${NEXT_PUBLIC_INTERVIEW_API:-http://interviewaix:8001}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-interviewdb}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-gmail}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      GMAIL_USER: ${GMAIL_USER:-}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      NEXT_PUBLIC_APP_VERSION: ${NEXT_PUBLIC_APP_VERSION:-v1.0.0}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@hirematrix.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123}
+      ADMIN_NAME: ${ADMIN_NAME:-Admin}
+      ADMIN_TENANT_ID: ${ADMIN_TENANT_ID:-00000000-0000-0000-0000-000000000001}
+      ADMIN_TENANT_NAME: ${ADMIN_TENANT_NAME:-Default Tenant}
+    ports:
+      - "3000:3000"
+    command: ["sh", "-c", "node_modules/.bin/prisma db push --skip-generate && node scripts/bootstrap-admin.js && node_modules/.bin/next start -p 3000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      interviewaix:
+        condition: service_healthy
+      talentmatchai:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/login').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  talent_chroma_data:
+  talent_uploads_data:

@@ -62,9 +62,25 @@ export async function POST(request: NextRequest) {
       cache: "no-store",
     });
 
-    const data = await response.json();
+    const raw = await response.text();
+    let data: any = null;
+    if (raw) {
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = { error: raw };
+      }
+    }
+
     if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
+      const upstreamError =
+        data?.error ||
+        data?.detail ||
+        `Interview service error (${response.status})`;
+      return NextResponse.json(
+        { error: String(upstreamError), upstream_status: response.status },
+        { status: response.status }
+      );
     }
 
     if (!data?.interview_id) {

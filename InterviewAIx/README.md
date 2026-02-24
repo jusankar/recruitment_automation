@@ -1,4 +1,4 @@
-# InterviewAIx
+﻿# InterviewAIx
 
 AI-driven interview orchestration service for Recruitment Automation.
 
@@ -53,7 +53,7 @@ OPENAI_API_KEY=your_openai_api_key
 DATABASE_URL=postgresql://postgres:password@localhost:5432/interviewdb
 ```
 
-## Setup and Installation
+## Setup
 1. Create virtual environment
 ```bash
 cd InterviewAIx
@@ -76,7 +76,19 @@ uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 5. Open docs
 - `http://127.0.0.1:8001/docs`
 
+## Docker
+For full stack container setup, use the root guide:
+- `../README.md` -> `Docker Quick Start`
+
+Run only this service (with dependencies via compose):
+```bash
+docker compose up --build interviewaix
+```
+
 ## Configuration Notes
 - `MAX_QUESTIONS` is defined in `app/models/interview.py`.
 - Tables are auto-created on service startup via `Base.metadata.create_all(bind=engine)`.
 - CORS is enabled for `http://localhost:3000` and `http://127.0.0.1:3000`.
+
+
+

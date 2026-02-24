@@ -1,18 +1,17 @@
-# RECRUITMENT_AUTOMATION
+﻿# Recruitment Automation
 
-End-to-end recruitment platform composed of three projects:
+End-to-end recruitment platform composed of 3 apps:
 - `TalentMatchAI` (resume ingestion + candidate matching)
 - `InterviewAIx` (AI interview orchestration)
 - `HireMatrixUI` (role-based web application)
 
 ## System Overview
-The platform automates the hiring pipeline:
-1. Recruiter uploads resumes
-2. Talent search by JD, experience, location
-3. Recruiter forwards selected candidate to interview
-4. Interview session and `interview_id` are created
-5. Candidate receives credentials + logs in + attends interview
-6. Director monitors interview outcomes and costs
+1. Recruiter uploads resumes.
+2. Talent search by JD, experience, and location.
+3. Recruiter forwards selected candidates to interview.
+4. Interview session + `interview_id` are created.
+5. Candidate gets credentials, logs in, attends interview.
+6. Director monitors outcomes and costs.
 
 ## High-Level Architecture
 ```text
@@ -56,14 +55,31 @@ recruitment_automation/
 - PostgreSQL running locally
 - OpenAI API key
 
-## Setup Order (Important)
+## Docker Quick Start
+Use this as the primary containerized workflow.
+
+1. Configure root `.env` (copy from `.env.example` and update values).
+2. Build and start all services:
+```bash
+docker compose up --build
+```
+3. Open:
+- HireMatrixUI: `http://localhost:3000`
+- TalentMatchAI docs: `http://localhost:8000/docs`
+- InterviewAIx docs: `http://localhost:8001/docs`
+
+Notes:
+- This stack includes `postgres`, `talentmatchai`, `interviewaix`, `hirematrixui`.
+- `hirematrixui` startup runs Prisma sync and bootstrap logic.
+
+## Setup Order
 Use this exact order to run all projects together.
 
-### 1) Start PostgreSQL
+### 1. Start PostgreSQL
 Create database (example):
 - `interviewdb`
 
-### 2) Setup and run TalentMatchAI (Port 8000)
+### 2. Setup TalentMatchAI (Port 8000)
 ```bash
 cd TalentMatchAI
 python -m venv .venv
@@ -94,7 +110,7 @@ Run:
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-### 3) Setup and run InterviewAIx (Port 8001)
+### 3. Setup InterviewAIx (Port 8001)
 ```bash
 cd InterviewAIx
 python -m venv .venv
@@ -113,7 +129,7 @@ Run:
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
-### 4) Setup and run HireMatrixUI (Port 3000)
+### 4. Setup HireMatrixUI (Port 3000)
 ```bash
 cd HireMatrixUI
 npm install
@@ -159,16 +175,16 @@ Open:
 - `http://localhost:3000`
 
 ## Runtime Flow
-1. Recruiter logs in to `HireMatrixUI`
-2. Resume upload is sent to `TalentMatchAI /upload-resume/`
-3. Candidate search calls `TalentMatchAI /search`
+1. Recruiter logs in to `HireMatrixUI`.
+2. Resume upload is sent to `TalentMatchAI /upload-resume/`.
+3. Candidate search calls `TalentMatchAI /search`.
 4. Forward action calls UI API:
    - starts interview in `InterviewAIx /interview/start`
    - stores candidate, interview, and application data in DB
    - generates candidate login credentials
-5. Candidate logs in and enters `interview_id`
-6. Q/A loop uses `InterviewAIx /interview/{interview_id}/answer` until complete
-7. Director views interview metrics/results in dashboard
+5. Candidate logs in and enters `interview_id`.
+6. Q/A loop uses `InterviewAIx /interview/{interview_id}/answer` until complete.
+7. Director views interview metrics/results in dashboard.
 
 ## Service URLs
 - TalentMatchAI docs: `http://127.0.0.1:8000/docs`
@@ -176,9 +192,12 @@ Open:
 - HireMatrixUI: `http://localhost:3000`
 
 ## Additional Notes
-- CORS for services is already set for local UI origins.
+- CORS is already set for local UI origins.
 - Candidate credential email uses Nodemailer and can switch provider via `EMAIL_PROVIDER`.
-- For project-specific details, see:
+- Project-specific docs:
   - `TalentMatchAI/README.md`
   - `InterviewAIx/README.md`
   - `HireMatrixUI/README.md`
+
+
+

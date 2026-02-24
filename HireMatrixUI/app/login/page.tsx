@@ -26,17 +26,17 @@ export default function LoginPage() {
         email,
         password,
         redirect: false,
+        callbackUrl: "/",
       });
 
-      if (result?.error) {
+      if (result?.error || !result?.ok) {
         setError("Invalid email or password");
         setLoading(false);
         return;
       }
 
-      // Redirect based on role - NextAuth will handle session
-      router.push("/");
-      router.refresh();
+      // Force a full navigation so auth cookies are applied before protected-route checks.
+      window.location.href = result.url || "/";
     } catch (err) {
       setError("An error occurred. Please try again.");
       setLoading(false);
