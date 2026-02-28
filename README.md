@@ -72,6 +72,47 @@ Notes:
 - This stack includes `postgres`, `talentmatchai`, `interviewaix`, `hirematrixui`.
 - `hirematrixui` startup runs Prisma sync and bootstrap logic.
 
+## Docker Standard Commands
+Use these commands from the repository root for consistent local build/run.
+
+1. Build all service images with current tag:
+```bash
+docker compose build --pull
+```
+
+2. Start the full stack in background:
+```bash
+docker compose up -d
+```
+
+3. Stream logs:
+```bash
+docker compose logs -f --tail=200
+```
+
+4. Stop and remove containers:
+```bash
+docker compose down
+```
+
+5. Stop and remove containers + volumes:
+```bash
+docker compose down -v
+```
+
+### Image Tagging and Versioning
+- Compose now builds and tags service images as:
+  - `${IMAGE_REGISTRY}/recruitment-talentmatchai:${IMAGE_TAG}`
+  - `${IMAGE_REGISTRY}/recruitment-interviewaix:${IMAGE_TAG}`
+  - `${IMAGE_REGISTRY}/recruitment-hirematrixui:${IMAGE_TAG}`
+- Defaults are defined in `.env.example`:
+  - `IMAGE_REGISTRY=local`
+  - `IMAGE_TAG=v1.0.0`
+- To build a specific version:
+```bash
+IMAGE_TAG=v1.1.0 docker compose build --pull
+```
+
 ## Setup Order
 Use this exact order to run all projects together.
 
@@ -198,6 +239,46 @@ Open:
   - `TalentMatchAI/README.md`
   - `InterviewAIx/README.md`
   - `HireMatrixUI/README.md`
+
+## GitHub CI/CD
+Workflows are configured in:
+- `.github/workflows/ci.yml`
+- `.github/workflows/docker-publish.yml`
+- `.github/workflows/render-deploy.yml`
+
+### Required GitHub Secrets
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+- `RENDER_DEPLOY_HOOK_TALENTMATCHAI`
+- `RENDER_DEPLOY_HOOK_INTERVIEWAIX`
+
+### Rollout Order
+1. Enable CI (`ci.yml`) on PR/push to enforce lint + tests + image build checks.
+2. Enable Docker publishing (`docker-publish.yml`) to push:
+   - `latest` (default branch),
+   - `vX.Y.Z` (tag pushes),
+   - `sha-<commit>` (short commit SHA).
+3. Deploy frontend (`HireMatrixUI`) on Vercel and point API env vars to backend URLs.
+
+## Free Deployment Path
+Use this order for a free-tier rollout:
+
+1. Deploy backend on Render
+- Blueprint file: `render.yaml` (repo root)
+- Services: `recruitment-talentmatchai`, `recruitment-interviewaix`
+- Database: `recruitment-postgres` (free plan)
+- Set `OPENAI_API_KEY` in both Render services.
+
+2. Deploy frontend on Vercel
+- Framework: Next.js
+- Root directory: `HireMatrixUI`
+- Required env vars:
+  - `NEXTAUTH_SECRET`
+  - `NEXTAUTH_URL`
+  - `DATABASE_URL` (Vercel Postgres/Neon/Supabase recommended; do not point to Render internal DB URL)
+  - `NEXT_PUBLIC_TALENT_API` (Render public URL)
+  - `NEXT_PUBLIC_INTERVIEW_API` (Render public URL)
+  - Email provider vars (`EMAIL_PROVIDER`, `EMAIL_FROM`, provider credentials)
 
 
 
