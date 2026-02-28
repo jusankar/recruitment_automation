@@ -268,6 +268,9 @@ Use this order for a free-tier rollout:
 - Services: `recruitment-talentmatchai`, `recruitment-interviewaix`
 - Database: `recruitment-postgres` (free plan)
 - Set `OPENAI_API_KEY` in both Render services.
+- Set CORS env vars in Render services:
+  - `TALENT_CORS_ORIGINS=https://<your-vercel-app>.vercel.app,http://localhost:3000`
+  - `INTERVIEW_CORS_ORIGINS=https://<your-vercel-app>.vercel.app,http://localhost:3000`
 
 2. Deploy frontend on Vercel
 - Framework: Next.js

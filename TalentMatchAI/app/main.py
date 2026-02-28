@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, BackgroundTasks, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from .models import BulkResumeInput, JobQuery, ResumeFetchResponse
@@ -13,10 +15,28 @@ app = FastAPI(
     version="1.1"
 )
 
+
+def _get_allowed_origins() -> list[str]:
+    default_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    raw = os.getenv("TALENT_CORS_ORIGINS", "")
+    if not raw.strip():
+        return default_origins
+
+    origins = []
+    for part in raw.split(","):
+        origin = part.strip().rstrip("/")
+        if origin and origin not in origins:
+            origins.append(origin)
+
+    if not origins or "*" in origins:
+        return default_origins
+    return origins
+
+
 # Allow HireMatrixUI (and other frontends) to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=_get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

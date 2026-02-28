@@ -24,6 +24,7 @@ services:
     container_name: talentmatchai
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      TALENT_CORS_ORIGINS: ${TALENT_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       APP_NAME: ${TALENT_APP_NAME:-TalentMatchAI}
       ENVIRONMENT: ${TALENT_ENVIRONMENT:-development}
       LOG_LEVEL: ${TALENT_LOG_LEVEL:-INFO}
@@ -59,6 +60,7 @@ services:
     container_name: interviewaix
     environment:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
+      INTERVIEW_CORS_ORIGINS: ${INTERVIEW_CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-interviewdb}
     ports:
       - "8001:8001"

@@ -16,6 +16,8 @@ services:
     envVars:
       - key: OPENAI_API_KEY
         sync: false
+      - key: TALENT_CORS_ORIGINS
+        sync: false
       - key: APP_NAME
         value: TalentMatchAI
       - key: ENVIRONMENT
@@ -53,6 +55,8 @@ services:
     healthCheckPath: /
     envVars:
       - key: OPENAI_API_KEY
+        sync: false
+      - key: INTERVIEW_CORS_ORIGINS
         sync: false
       - key: DATABASE_URL
         fromDatabase:
