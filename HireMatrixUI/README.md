@@ -118,6 +118,8 @@ docker compose up --build hirematrixui
 - `npm run build`
 - `npm run start`
 - `npm run lint`
+- `npm run test`
+- `npm run test:watch`
 - `npm run db:generate`
 - `npm run db:push`
 - `npm run db:migrate`

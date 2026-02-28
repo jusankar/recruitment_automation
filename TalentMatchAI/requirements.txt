@@ -37,3 +37,4 @@ google-auth-oauthlib==1.2.0
 # Optional (Recommended for Production)
 # ==============================
 orjson==3.10.3
+pytest==8.3.4
