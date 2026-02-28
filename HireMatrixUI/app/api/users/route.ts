@@ -4,6 +4,9 @@ import { getCurrentUser } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const createUserSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),

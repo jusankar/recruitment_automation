@@ -6,6 +6,9 @@ import { sendEmail } from "@/lib/email-service";
 
 const interviewAPIBaseURL = process.env.NEXT_PUBLIC_INTERVIEW_API || "http://localhost:8001";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function generatePassword(length = 12): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
   let result = "";
