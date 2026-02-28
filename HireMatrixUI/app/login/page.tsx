@@ -30,7 +30,12 @@ export default function LoginPage() {
       });
 
       if (result?.error || !result?.ok) {
-        setError("Invalid email or password");
+        const authError = result?.error || "CredentialsSignin";
+        setError(
+          authError === "CredentialsSignin"
+            ? "Invalid email or password"
+            : `Sign-in failed: ${authError}`
+        );
         setLoading(false);
         return;
       }

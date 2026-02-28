@@ -84,5 +84,13 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+  logger: {
+    error(code, metadata) {
+      console.error("[next-auth][error]", code, metadata);
+    },
+    warn(code) {
+      console.warn("[next-auth][warn]", code);
+    },
+  },
   secret: process.env.NEXTAUTH_SECRET,
 };
