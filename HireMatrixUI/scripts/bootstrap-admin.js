@@ -4,13 +4,6 @@ const bcrypt = require("bcryptjs");
 const prisma = new PrismaClient();
 
 async function main() {
-  const userCount = await prisma.user.count();
-
-  if (userCount > 0) {
-    console.log("[bootstrap-admin] users already exist; skipping seed");
-    return;
-  }
-
   const tenantId = process.env.ADMIN_TENANT_ID || "00000000-0000-0000-0000-000000000001";
   const tenantName = process.env.ADMIN_TENANT_NAME || "Default Tenant";
   const adminEmail = process.env.ADMIN_EMAIL || "admin@hirematrix.local";
@@ -30,7 +23,7 @@ async function main() {
   const passwordHash = await bcrypt.hash(adminPassword, 10);
 
   await prisma.user.upsert({
-    where: { email: adminEmail },
+    where: { email: adminEmail.toLowerCase() },
     update: {
       name: adminName,
       role: "admin",
@@ -38,7 +31,7 @@ async function main() {
       password: passwordHash,
     },
     create: {
-      email: adminEmail,
+      email: adminEmail.toLowerCase(),
       name: adminName,
       role: "admin",
       tenantId: tenant.id,
@@ -46,7 +39,7 @@ async function main() {
     },
   });
 
-  console.log(`[bootstrap-admin] created default admin: ${adminEmail}`);
+  console.log(`[bootstrap-admin] upserted admin: ${adminEmail.toLowerCase()}`);
 }
 
 main()

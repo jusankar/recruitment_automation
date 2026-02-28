@@ -16,16 +16,22 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const loginId = credentials.email.trim();
+        const loginId = credentials.email.trim().toLowerCase();
         const user = loginId.includes("@")
-          ? await prisma.user.findUnique({
-              where: { email: loginId },
+          ? await prisma.user.findFirst({
+              where: {
+                email: {
+                  equals: loginId,
+                  mode: "insensitive",
+                },
+              },
               include: { tenant: true },
             })
           : await prisma.user.findFirst({
               where: {
                 email: {
                   startsWith: `${loginId}@`,
+                  mode: "insensitive",
                 },
               },
               include: { tenant: true },
