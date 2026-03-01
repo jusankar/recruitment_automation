@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI, BackgroundTasks, UploadFile, File
+from fastapi import FastAPI, BackgroundTasks, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .models import BulkResumeInput, JobQuery, ResumeFetchResponse
 from .ingestion import ingest_bulk_resumes
@@ -103,38 +103,40 @@ async def upload_resume(
 
 @app.get("/fetch-gmail-resumes")
 def fetch_gmail(background_tasks: BackgroundTasks):
+    try:
+        file_paths = fetch_resume_emails()
 
-    file_paths = fetch_resume_emails()
+        resume_texts = []
+        metadatas = []
 
-    resume_texts = []
-    metadatas = []
+        for path in file_paths:
+            resume_text = parse_resume(path)
+            structured_data = structure_resume(resume_text)
 
-    for path in file_paths:
-        resume_text = parse_resume(path)
-        structured_data = structure_resume(resume_text)
+            resume_texts.append(resume_text)
 
-        resume_texts.append(resume_text)
+            metadatas.append({
+                "file_path": path,
+                "candidate_name": structured_data.get("name"),
+                "candidate_email": structured_data.get("email"),
+                "skills": structured_data.get("skills"),
+                "experience": structured_data.get("experience", 0),
+                "location": structured_data.get("location", ""),
+                "source": "gmail"
+            })
 
-        metadatas.append({
-            "file_path": path,
-            "candidate_name": structured_data.get("name"),
-            "candidate_email": structured_data.get("email"),
-            "skills": structured_data.get("skills"),
-            "experience": structured_data.get("experience", 0),
-            "location": structured_data.get("location", ""),
-            "source": "gmail"
-        })
+        background_tasks.add_task(
+            ingest_bulk_resumes,
+            resume_texts,
+            metadatas
+        )
 
-    background_tasks.add_task(
-        ingest_bulk_resumes,
-        resume_texts,
-        metadatas
-    )
-
-    return {
-        "count": len(file_paths),
-        "status": "Resume ingestion started"
-    }
+        return {
+            "count": len(file_paths),
+            "status": "Resume ingestion started"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
 def root():

@@ -75,6 +75,10 @@ For Gmail ingestion, place OAuth files at:
 - `TalentMatchAI/app/intake/credentials.json`
 - `TalentMatchAI/app/intake/token.json` (generated after first auth)
 
+For non-interactive deployments (e.g., Render), provide these env vars instead:
+- `GMAIL_CREDENTIALS_JSON` (content of credentials JSON)
+- `GMAIL_TOKEN_JSON` (authorized user token JSON with refresh token)
+
 ## Setup
 1. Create virtual environment
 ```bash

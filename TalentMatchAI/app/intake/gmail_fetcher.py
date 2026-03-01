@@ -1,5 +1,6 @@
 import os
 import base64
+import json
 from email import message_from_bytes
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -15,6 +16,8 @@ SCOPES = ["https://www.googleapis.com/auth/gmail.modify"]
 BASE_DIR = os.path.dirname(__file__)
 CREDENTIALS_FILE = os.path.join(BASE_DIR, "credentials.json")
 TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
+ENV_CREDENTIALS_JSON = os.getenv("GMAIL_CREDENTIALS_JSON")
+ENV_TOKEN_JSON = os.getenv("GMAIL_TOKEN_JSON")
 
 MAX_RESULTS = int(os.getenv("GMAIL_MAX_RESULTS", 20))
 RESUME_LABEL = os.getenv("GMAIL_RESUME_LABEL", "Resume Inbox")
@@ -44,20 +47,41 @@ def get_gmail_service():
     creds = None
 
     try:
-        if os.path.exists(TOKEN_FILE):
+        if ENV_TOKEN_JSON:
+            token_payload = json.loads(ENV_TOKEN_JSON)
+            creds = Credentials.from_authorized_user_info(token_payload, SCOPES)
+        elif os.path.exists(TOKEN_FILE):
             creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
 
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    CREDENTIALS_FILE, SCOPES
-                )
+                if not ENV_CREDENTIALS_JSON and not os.path.exists(CREDENTIALS_FILE):
+                    raise RuntimeError(
+                        "Missing Gmail OAuth credentials. Set GMAIL_CREDENTIALS_JSON "
+                        "or provide app/intake/credentials.json."
+                    )
+
+                if not os.isatty(0):
+                    raise RuntimeError(
+                        "Interactive Gmail OAuth is unavailable in this environment. "
+                        "Provide a valid token via GMAIL_TOKEN_JSON (with refresh_token)."
+                    )
+
+                if ENV_CREDENTIALS_JSON:
+                    flow = InstalledAppFlow.from_client_config(
+                        json.loads(ENV_CREDENTIALS_JSON), SCOPES
+                    )
+                else:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        CREDENTIALS_FILE, SCOPES
+                    )
                 creds = flow.run_local_server(port=0)
 
-            with open(TOKEN_FILE, "w") as token:
-                token.write(creds.to_json())
+            if not ENV_TOKEN_JSON:
+                with open(TOKEN_FILE, "w") as token:
+                    token.write(creds.to_json())
 
         return build("gmail", "v1", credentials=creds)
 
