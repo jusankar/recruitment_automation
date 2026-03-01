@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { talentAPI } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +28,7 @@ export default function ResumeUpload() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await talentAPI.post("/upload-resume/", formData, {
+      const response = await axios.post("/api/talent/upload", formData, {
         maxContentLength: Infinity,
         maxBodyLength: Infinity,
       });
