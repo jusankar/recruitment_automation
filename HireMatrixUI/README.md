@@ -61,6 +61,8 @@ NEXT_PUBLIC_TALENT_API=http://127.0.0.1:8000
 NEXT_PUBLIC_INTERVIEW_API=http://127.0.0.1:8001
 
 DATABASE_URL=postgresql://postgres:password@localhost:5432/interviewdb
+# For external managed Postgres (Render/Neon/Supabase), use:
+# DATABASE_URL=postgresql://user:pass@host:5432/dbname?sslmode=require
 
 # Optional
 NEXT_PUBLIC_APP_VERSION=v1.0.0

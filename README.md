@@ -163,6 +163,8 @@ Create `InterviewAIx/.env`:
 ```env
 OPENAI_API_KEY=your_openai_api_key
 DATABASE_URL=postgresql://postgres:password@localhost:5432/interviewdb
+# For external managed Postgres, use:
+# DATABASE_URL=postgresql://user:pass@host:5432/dbname?sslmode=require
 ```
 
 Run:
@@ -183,6 +185,8 @@ NEXTAUTH_URL=http://localhost:3000
 NEXT_PUBLIC_TALENT_API=http://127.0.0.1:8000
 NEXT_PUBLIC_INTERVIEW_API=http://127.0.0.1:8001
 DATABASE_URL=postgresql://postgres:password@localhost:5432/interviewdb
+# For external managed Postgres, use:
+# DATABASE_URL=postgresql://user:pass@host:5432/dbname?sslmode=require
 
 # Optional
 NEXT_PUBLIC_APP_VERSION=v1.0.0
@@ -279,6 +283,7 @@ Use this order for a free-tier rollout:
   - `NEXTAUTH_SECRET`
   - `NEXTAUTH_URL`
   - `DATABASE_URL` (Vercel Postgres/Neon/Supabase recommended; do not point to Render internal DB URL)
+  - For external managed Postgres, append `?sslmode=require`
   - `NEXT_PUBLIC_TALENT_API` (Render public URL)
   - `NEXT_PUBLIC_INTERVIEW_API` (Render public URL)
   - Email provider vars (`EMAIL_PROVIDER`, `EMAIL_FROM`, provider credentials)

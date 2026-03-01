@@ -51,6 +51,8 @@ Create `InterviewAIx/.env`:
 ```env
 OPENAI_API_KEY=your_openai_api_key
 DATABASE_URL=postgresql://postgres:password@localhost:5432/interviewdb
+# For external managed Postgres (Render/Neon/Supabase), use:
+# DATABASE_URL=postgresql://user:pass@host:5432/dbname?sslmode=require
 ```
 
 ## Setup
